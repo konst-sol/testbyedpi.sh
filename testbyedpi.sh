@@ -56,12 +56,12 @@ SITES_ARRAY=()
 
 # Парсим ключи
 TOTAL_STRATS=0
-while getopts "a:s:b:c:t:p:Lm:o:vh" opt; do
+while getopts "a:s:b:c:e:t:p:Lm:o:vh" opt; do
     case $opt in
         a) STRATS_ARRAY+=("$OPTARG"); ((TOTAL_STRATS++)) ;;
         s) SITES_ARRAY+=("$OPTARG") ;;
         b) PROXY_PATH="$OPTARG" ;;
-        e) CURL_CMD="OPTARG" ;;
+        e) CURL_CMD="$OPTARG" ;;
         c) COUNT="$OPTARG" ;;
         t) TIMEOUT="$OPTARG" ;;
         p) PORT="$OPTARG" ;;
