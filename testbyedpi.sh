@@ -1,6 +1,7 @@
 #!/bin/bash
 
 PROXY_PATH=./ciadpi # путь к byedpi
+CURL_CMD=curl # команда для запуска curl (может быть например ./curl_chrome110)
 
 # список стратегий и тестируемых сайтов:
 # https://github.com/romanvht/ByeByeDPI/tree/master/app/src/main/assets
@@ -35,6 +36,7 @@ HELP="Использование: $0 [ПАРАМЕТР]… [ФАЙЛ_СТРАТ�
   -s site       задает тестируемый сайт в коммандной строке вместо файла, можно
                 указать опцию несколько раз
   -b path       путь к byedpi (по умолчанию $PROXY_PATH)
+  -e cmd        команда для запуска curl (по умолчанию $CURL_CMD)
   -c count      количество проверок каждого сайта (по умолчанию $COUNT)
   -t seconds    максимальное время ожидания ответа сайта в секундах (по умолчанию $TIMEOUT)
   -p port       порт, на котором будет работать byedpi (по умолчанию $PORT)
@@ -59,6 +61,7 @@ while getopts "a:s:b:c:t:p:Lm:o:vh" opt; do
         a) STRATS_ARRAY+=("$OPTARG"); ((TOTAL_STRATS++)) ;;
         s) SITES_ARRAY+=("$OPTARG") ;;
         b) PROXY_PATH="$OPTARG" ;;
+        e) CURL_CMD="OPTARG" ;;
         c) COUNT="$OPTARG" ;;
         t) TIMEOUT="$OPTARG" ;;
         p) PORT="$OPTARG" ;;
@@ -150,18 +153,19 @@ for STRAT in "${STRATS_ARRAY[@]}"; do
         fi
         for ((i=0; i<COUNT; i++)); do
             # Проверка доступности сайта через прокси
-            # -x: задает адрес прокси
             # -s: "silent" режим (скрыть прогресс-бар)
-            # -o /dev/null: не выводить тело страницы в терминал
-            # -w: вывести только код ответа HTTP
             # -S: включает показ ошибок, когда -s выключил их
             # -L: следовать редиректу
+            # -o /dev/null: не выводить тело страницы в терминал
+            # --proto-default https: использовать https если протокол не указан
+            # -w: вывести только код ответа HTTP
+            # -x: задает адрес прокси
             # 2>&1 перенаправляет текст ошибки в ту же переменную, где лежит код ответа
             start=$(date +%s%3N) # в миллисекундах
             # Выполняем запрос
-            RESULT=$(curl -s -S $REDIRECT -o /dev/null -w "%{http_code}" \
-                          --max-time $TIMEOUT \
-                          -x "$PROXY_ADDR" "https://$SITE" 2>&1)
+            RESULT=$($CURL_CMD -s -S $REDIRECT -o /dev/null --proto-default https \
+                               -w "%{http_code}" --max-time $TIMEOUT \
+                               -x "$PROXY_ADDR" "$SITE" 2>&1)
             end=$(date +%s%3N)
             ((time = end-start))
 
