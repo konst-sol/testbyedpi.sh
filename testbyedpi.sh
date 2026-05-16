@@ -44,7 +44,7 @@ HELP="Использование: $0 [ПАРАМЕТР]… [ФАЙЛ_СТРАТ�
   -m percent    минимальный процент; выводить только те стратегии,
                 результат которых больше или равен указанному значению;
                 может принимать значения от 0 до 100 (по умолчанию $OUTPUT_MIN_SUCCESSFUL)
-  -o file       файл, в который будет записан результат проверок (только стратегии)
+  -o file       файл, в который будет записан результат проверок
   -v            выводить подробную информацию
   -h            показать справку и выйти
 "
@@ -149,7 +149,7 @@ for STRAT in "${STRATS_ARRAY[@]}"; do
         if [[ $VERBOSE == 1 ]]; then
             echo "Проверка $SITE через $PROXY_ADDR"
         else
-            echo -n "  ${SITE}: "
+            echo -n "  ${SITE::32}: "
         fi
         for ((i=0; i<COUNT; i++)); do
             # Проверка доступности сайта через прокси
@@ -234,7 +234,7 @@ sort -n $tmpfile | while read -r first rest; do
     if ((first >= min_successful)); then
         echo -e "\e[1;32m${first}/$NUM_TESTS\e[0m $rest"
         if [[ -n "$OUTPUT_FILE" ]]; then
-            echo "$rest" >> "$OUTPUT_FILE"
+            echo "${first}/$NUM_TESTS $rest" >> "$OUTPUT_FILE"
         fi
     fi
 done
