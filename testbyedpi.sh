@@ -1,6 +1,7 @@
 #!/bin/bash
 
-PROXY_PATH=./ciadpi # путь к byedpi
+PROXY_CMD=ciadpi
+PROXY_PATH= # путь к ciadpi
 CURL_CMD=curl # команда для запуска curl (может быть например ./curl_chrome110)
 
 # список стратегий и тестируемых сайтов:
@@ -104,8 +105,17 @@ fi
 ((NUM_TESTS = ${#SITES_ARRAY[@]} * COUNT))
 
 # проверка наличия byedpi
+if [[ -z "$PROXY_PATH" ]]; then
+    if [[ -x "./$PROXY_CMD" ]]; then
+        # в текущем каталоге
+        PROXY_PATH="./$PROXY_CMD"
+    else
+        # в $PATH
+        PROXY_PATH="$PROXY_CMD"
+    fi
+fi
 if ! command -v $PROXY_PATH > /dev/null; then
-    echo "$0: byedpi не найден"; exit 1
+    echo "$0: ciadpi не найден"; exit 1
 fi
 
 # Адрес на котором слушает byedpi
@@ -117,6 +127,25 @@ PROXY_ADDR="socks5://127.0.0.1:$PORT"
 tmpfile=$(mktemp)
 # Удалить временный файл после завершения/прерывания скрипта
 trap 'rm -f "$tmpfile"' EXIT
+
+# вывод результатов проверки
+print_result() {
+    kill $PROXY_PID 2>/dev/null
+    echo
+    # Сортируем результаты по количеству успешных проверок
+    ((min_successful = NUM_TESTS*OUTPUT_MIN_SUCCESSFUL/100))
+    sort -n $tmpfile | while read -r first rest; do
+        if ((first >= min_successful)); then
+            echo -e "\e[1;32m${first}/$NUM_TESTS\e[0m $rest"
+            if [[ -n "$OUTPUT_FILE" ]]; then
+                echo "${first}/$NUM_TESTS $rest" >> "$OUTPUT_FILE"
+            fi
+        fi
+    done
+    exit
+}
+# прерывание (Ctrl-C)
+trap print_result SIGINT
 
 # Количество проверенных стратегий
 NUM_STRATS=0
@@ -216,7 +245,6 @@ for STRAT in "${STRATS_ARRAY[@]}"; do
     echo  -e "\e[1;32m$SUCCESSFUL из $NUM_TESTS пройдено\e[0m"
     echo "$SUCCESSFUL $STRAT" >> $tmpfile
 
-
     # Останавливаем прокси после проверки
     kill $PROXY_PID
     wait $PROXY_PID
@@ -228,14 +256,4 @@ for STRAT in "${STRATS_ARRAY[@]}"; do
 
 done
 
-# Сортируем результаты по количеству успешных проверок
-((min_successful = NUM_TESTS*OUTPUT_MIN_SUCCESSFUL/100))
-sort -n $tmpfile | while read -r first rest; do
-    if ((first >= min_successful)); then
-        echo -e "\e[1;32m${first}/$NUM_TESTS\e[0m $rest"
-        if [[ -n "$OUTPUT_FILE" ]]; then
-            echo "${first}/$NUM_TESTS $rest" >> "$OUTPUT_FILE"
-        fi
-    fi
-done
-
+print_result
