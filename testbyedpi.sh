@@ -15,8 +15,8 @@ TIMEOUT=2
 COUNT=3
 # Порт на котором будет слушать byedpi (1024-65535)
 PORT=10803
-# Включает в curl опцию "следовать редиректу"
-REDIRECT=
+# Дополнительные аргументы curl
+ADD_ARGS=
 
 # ** Опции вывода результата **
 # Выводить только стратегии без количества успешных проверок
@@ -36,12 +36,12 @@ HELP="Использование: $0 [ПАРАМЕТР]… [ФАЙЛ_СТРАТ�
                 указать опцию несколько раз (заключайте стратегию в кавычки)
   -s site       задает тестируемый сайт в коммандной строке вместо файла, можно
                 указать опцию несколько раз
-  -b path       путь к byedpi (по умолчанию $PROXY_PATH)
+  -b path       путь к byedpi
   -e cmd        команда для запуска curl (по умолчанию $CURL_CMD)
   -c count      количество проверок каждого сайта (по умолчанию $COUNT)
   -t seconds    максимальное время ожидания ответа сайта в секундах (по умолчанию $TIMEOUT)
   -p port       порт, на котором будет работать byedpi (по умолчанию $PORT)
-  -L            включить в curl опцию -L (следовать редиректу)
+  -C args       дополнительные аргументы для curl (например: -C \"-L -I\")
   -m percent    минимальный процент; выводить только те стратегии,
                 результат которых больше или равен указанному значению;
                 может принимать значения от 0 до 100 (по умолчанию $OUTPUT_MIN_SUCCESSFUL)
@@ -57,7 +57,7 @@ SITES_ARRAY=()
 
 # Парсим ключи
 TOTAL_STRATS=0
-while getopts "a:s:b:c:e:t:p:Lm:o:vh" opt; do
+while getopts "a:s:b:c:e:t:T:p:C:m:o:vh" opt; do
     case $opt in
         a) STRATS_ARRAY+=("$OPTARG"); ((TOTAL_STRATS++)) ;;
         s) SITES_ARRAY+=("$OPTARG") ;;
@@ -66,7 +66,7 @@ while getopts "a:s:b:c:e:t:p:Lm:o:vh" opt; do
         c) COUNT="$OPTARG" ;;
         t) TIMEOUT="$OPTARG" ;;
         p) PORT="$OPTARG" ;;
-        L) REDIRECT="-L" ;;
+        C) ADD_ARGS="$OPTARG" ;;
         m) OUTPUT_MIN_SUCCESSFUL="$OPTARG" ;;
         o) OUTPUT_FILE="$OPTARG" ;;
         v) VERBOSE=1 ;;
@@ -184,7 +184,6 @@ for STRAT in "${STRATS_ARRAY[@]}"; do
             # Проверка доступности сайта через прокси
             # -s: "silent" режим (скрыть прогресс-бар)
             # -S: включает показ ошибок, когда -s выключил их
-            # -L: следовать редиректу
             # -o /dev/null: не выводить тело страницы в терминал
             # --proto-default https: использовать https если протокол не указан
             # -w: вывести только код ответа HTTP
@@ -192,9 +191,9 @@ for STRAT in "${STRATS_ARRAY[@]}"; do
             # 2>&1 перенаправляет текст ошибки в ту же переменную, где лежит код ответа
             start=$(date +%s%3N) # в миллисекундах
             # Выполняем запрос
-            RESULT=$($CURL_CMD -s -S $REDIRECT -o /dev/null --proto-default https \
+            RESULT=$($CURL_CMD -s -S -o /dev/null --proto-default https \
                                -w "%{http_code}" --max-time $TIMEOUT \
-                               -x "$PROXY_ADDR" "$SITE" 2>&1)
+                               -x "$PROXY_ADDR" $ADD_ARGS "$SITE" 2>&1)
             end=$(date +%s%3N)
             ((time = end-start))
 
