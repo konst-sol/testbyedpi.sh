@@ -81,6 +81,7 @@ shift $((OPTIND - 1))
 if ((TOTAL_STRATS==0)); then
     # Если -a не было, берем список стратегий из файла
     # Читаем файл (удаляем комментарии и пустые строки)
+    if (($# == 0)); then echo "Пустой список стратегий"; exit 1; fi
     mapfile -t STRATS_ARRAY < <(sed 's/#.*//; /^[[:space:]]*$/d' "$1")
     shift
     TOTAL_STRATS=${#STRATS_ARRAY[@]}
@@ -94,9 +95,6 @@ while (($# != 0)); do
     shift
 done
 
-if ((${#STRATS_ARRAY[@]} == 0)); then
-    echo "Пустой список стратегий"; exit 1;
-fi
 if ((${#SITES_ARRAY[@]} == 0)); then
     echo "Пустой список сайтов"; exit 1;
 fi
