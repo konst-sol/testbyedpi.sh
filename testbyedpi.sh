@@ -102,7 +102,7 @@ fi
 # Количество проверок каждой стратегии
 ((NUM_TESTS = ${#SITES_ARRAY[@]} * COUNT))
 
-# проверка наличия byedpi
+# Проверка наличия byedpi
 if [[ -z "$PROXY_PATH" ]]; then
     if [[ -x "./$PROXY_CMD" ]]; then
         # в текущем каталоге
@@ -126,7 +126,7 @@ tmpfile=$(mktemp)
 # Удалить временный файл после завершения/прерывания скрипта
 trap 'rm -f "$tmpfile"' EXIT
 
-# вывод результатов проверки
+# Вывод результатов проверки
 print_result() {
     kill $PROXY_PID 2>/dev/null
     echo
